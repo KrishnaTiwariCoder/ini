@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "URL Analysis Extension",
+  "version": "1.0",
+  "description": "Analyzes URLs for security and trust metrics",
+  "permissions": ["activeTab", "scripting", "tabs"],
+  "action": {
+    "default_popup": "index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/contentScript.ts"]
+    }
+  ],
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  }
+}
