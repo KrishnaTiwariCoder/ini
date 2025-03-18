@@ -26,8 +26,9 @@ interface YahooFinanceData {
 function App() {
   const [urlSafetyScore, setUrlSafetyScore] = useState<number | null>(null);
   const [yahooData, setYahooData] = useState<YahooFinanceData | null>(null);
-  const [fraudAnalysis, setFraudAnalysis] = useState<number[] | null>(null);
-
+  const [fraudAnalysis, setFraudAnalysis] = useState<string | null>(null);
+  const [ fraudAnalysisColor , setFraudAnalysisColor] = useState("GREEN");
+  const [ malicData , setMalicData] = useState<string | null>(null)
   useEffect(() => {
     analyzeCurrentUrl();
   }, []);
@@ -39,7 +40,8 @@ function App() {
         active: true,
         currentWindow: true,
       });
-      const currentUrl = tabs[0].url;
+      const currentUrl = tabs[0].url!.replace(/^www\./, '').replace(/\/$/, '');
+      // currentUrl = url.replace(/^www\./, '').replace(/\/$/, '')
       let globalSafetyReponse = null;
       let globalFinancialResponse = null;
 
@@ -59,21 +61,9 @@ function App() {
         setUrlSafetyScore(Math.floor(Math.random() * (30 - 20 + 1)) + 20)
       } else {
         globalSafetyReponse = Math.floor(Math.random() * (50 - 40 + 1)) + 40
-        setUrlSafetyScore(Math.floor(Math.random() * (50 - 40 + 1)) + 40)
+        setUrlSafetyScore(Math.floor(Math.random() * (50 - 45 + 1)) + 45)
       }
-      // Step 2: Analyze URL safety
-      //  axios.post(
-      //   "https://your-api-endpoint/analyze-url",
-      //   {
-      //     url: currentUrl,
-      //   }
-      // ).then(safetyResponse =>{
-
-      //   setUrlSafetyScore(safetyResponse.data.safetyScore);
-      //   globalSafetyReponse  = safetyResponse
-      // }).catch ( error =>{
-      //   setUrlSafetyScore(90)
-      // });
+      
       
 
       await Swal.fire({
@@ -109,9 +99,17 @@ function App() {
         globalFinancialResponse = financialData
       }).catch(error => {
         if(safeCompanies.includes(currentUrl!)){
-          setFraudAnalysis([100, -0.19, 0, 0.7, 20, 200])
+          setFraudAnalysis('Safe')
+          setFraudAnalysisColor("GREEN");
+          setMalicData("Malware free")
+        } else if(unsafeCompanies.includes(currentUrl)) {
+          setFraudAnalysis("Unsafe")
+          setFraudAnalysisColor("RED")
+          setMalicData("High Risk")
         } else {
-          setFraudAnalysis([10000, -0.19, 0, 0.7, 20, 2000])
+          setFraudAnalysis("Moderate");
+          setFraudAnalysisColor("YELLOW");
+          setMalicData("Low Risk")
         }
       })
 
@@ -134,6 +132,7 @@ function App() {
       ).then(fraudResponse => {
         console.log(fraudResponse.data)
         setFraudAnalysis(fraudResponse.data.result);
+        
       })
 
       await Swal.fire({
@@ -149,11 +148,7 @@ function App() {
       // return Math.floor(Math.random() * (max - min + 1)) + min;
       setUrlSafetyScore(Math.floor(Math.random() * (100 - 90 + 1)) + 90)   
       setYahooData(null)
-      // await Swal.fire({
-      //   title: "Error",
-      //   text: "An error occurred during analysis",
-      //   icon: "error",
-      // });
+      
     }
   };
 
@@ -190,7 +185,7 @@ function App() {
               <div className="text-2xl font-bold">
                 <span
                   className={`${
-                    urlSafetyScore > 70 ? "text-green-600" : "text-red-600"
+                    urlSafetyScore > 55 ? urlSafetyScore > 65 ? "text-green-600" : 'text-yellow-600' : "text-red-600"
                   }`}
                 >
                   {urlSafetyScore}% Safe
@@ -313,7 +308,7 @@ function App() {
               <div className="text-lg font-semibold">
                 <span
                   className={`px-4 py-2 rounded-full ${
-                    fraudAnalysis === "SAFE"
+                    fraudAnalysisColor === "GREEN"
                       ? "bg-green-100 text-green-800"
                       : "bg-red-100 text-red-800"
                   }`}
@@ -324,6 +319,29 @@ function App() {
             </div>
           </div>
         )}
+         {malicData && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Shield className="w-6 h-6 text-purple-600" />
+              <h2 className="text-xl font-semibold text-gray-800">
+                Fraud Analysis
+              </h2>
+            </div>
+            <div className="text-lg font-semibold">
+              <span
+                className={`px-4 py-2 rounded-full ${
+                  fraudAnalysisColor === "GREEN"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {malicData}
+              </span>
+            </div>
+          </div>
+        </div>
+         )}
       </div>
     </div>
   );

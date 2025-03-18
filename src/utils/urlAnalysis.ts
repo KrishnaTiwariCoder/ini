@@ -43,28 +43,76 @@ export async function analyzeUrl(url: string) {
   }
 }
 
-async function fetchWhoisData(url: string): Promise<WhoisData> {
-  // In a real implementation, you would call a WHOIS API
-  // This is a mock implementation
-  return {
-    creationDate: '2024-01-01',
-    registrar: 'Example Registrar'
-  };
+export async function fetchWhoisData(url: string): Promise<WhoisData> {
+  try {
+    const response = await fetch(`https://api.whoislookupapi.com/v1/whois?domain=${url}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer YOUR_API_KEY' // Replace with a valid API key
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`WHOIS lookup failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      creationDate: data.creation_date || 'Unknown',
+      registrar: data.registrar || 'Unknown'
+    };
+  } catch (error) {
+    console.error(error);
+    return { creationDate: 'Unknown', registrar: 'Unknown' };
+  }
 }
 
 async function fetchCTScore(url: string): Promise<number> {
-  // In a real implementation, you would check Certificate Transparency logs
-  // This is a mock implementation
-  return 85;
+  try {
+    const response = await fetch(`https://crt.sh/?q=${url}&output=json`);
+    
+    if (!response.ok) {
+      throw new Error(`CT Log lookup failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // A simple heuristic: More certificates = higher score
+    const score = Math.min(100, data.length * 5); // Capping at 100
+
+    return score;
+  } catch (error) {
+    console.error(error);
+    return 0; // Default to 0 if there's an error
+  }
 }
 
+
 async function fetchBusinessRegistry(url: string): Promise<BusinessRegistry> {
-  // In a real implementation, you would query business registry APIs
-  // This is a mock implementation
-  return {
-    status: 'Active',
-    type: 'Corporation'
-  };
+  try {
+    const response = await fetch(`https://api.opencorporates.com/v0.4/companies/search?q=${url}`);
+
+    if (!response.ok) {
+      throw new Error(`Business registry lookup failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.results.companies.length === 0) {
+      throw new Error("No business registry data found.");
+    }
+
+    const company = data.results.companies[0].company;
+
+    return {
+      status: company.current_status || 'Unknown',
+      type: company.company_type || 'Unknown'
+    };
+  } catch (error) {
+    console.error(error);
+    return { status: 'Unknown', type: 'Unknown' };
+  }
 }
 
 async function predictUrl(url: string): Promise<number> {
